@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     tools {
-        maven 'M2_HOME'   // must match Maven name in Jenkins Global Tool Configuration
+        // Must match the Maven name in "Global Tool Configuration"
+        maven 'M2_HOME'
     }
 
     environment {
@@ -57,6 +58,36 @@ pipeline {
                         docker push ${DOCKER_IMAGE}:latest
                     '''
                 }
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                // Jenkins user must have ~/.kube and ~/.minikube set up (we already did that)
+                sh '''
+                    echo "Current kube context:"
+                    kubectl config current-context || echo "No context"
+
+                    # Create namespace devops if it doesn't exist
+                    kubectl get ns devops || kubectl create namespace devops
+
+                    echo "Apply MySQL & Spring Boot manifests"
+                    kubectl apply -f mysql-deployment.yaml -n devops
+                    kubectl apply -f spring-deployment.yaml -n devops
+
+                    echo "Update deployment image to the new build"
+                    kubectl set image deployment/spring-deployment \
+                        spring-app=${DOCKER_IMAGE}:${BUILD_NUMBER} -n devops
+
+                    echo "Wait for rollout to finish"
+                    kubectl rollout status deployment/spring-deployment -n devops
+
+                    echo "Pods in devops namespace:"
+                    kubectl get pods -n devops
+
+                    echo "Services in devops namespace:"
+                    kubectl get svc -n devops
+                '''
             }
         }
     }
