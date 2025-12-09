@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        maven 'M2_HOME'   // must match Maven name in Jenkins
+        maven 'M2_HOME'   // must match Maven name in Jenkins Global Tool Configuration
     }
 
     environment {
@@ -26,13 +26,14 @@ pipeline {
 
         stage('MVN SONARQUBE') {
             steps {
-                sh """
-                    mvn sonar:sonar \
-                      -Dsonar.projectKey=student-management \
-                      -Dsonar.host.url=http://localhost:9000 \
-                      -Dsonar.login=admin \
-                      -Dsonar.password=Ziedbensalah123$
-                """
+                withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
+                    sh '''
+                        mvn sonar:sonar \
+                          -Dsonar.projectKey=student-management \
+                          -Dsonar.host.url=http://localhost:9000 \
+                          -Dsonar.token=$SONAR_TOKEN
+                    '''
+                }
             }
         }
 
@@ -60,4 +61,3 @@ pipeline {
         }
     }
 }
-
