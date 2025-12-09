@@ -31,7 +31,7 @@ pipeline {
                       -Dsonar.projectKey=student-management \
                       -Dsonar.host.url=http://localhost:9000 \
                       -Dsonar.login=admin \
-                      -Dsonar.password=sonar
+                      -Dsonar.password=Ziedbensalah123$
                 """
             }
         }
